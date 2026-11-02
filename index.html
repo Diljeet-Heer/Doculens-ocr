@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DocuLens AI Pro - Precision Document Intelligence</title>
+  <title>DocuLens AI Pro - Precision Document Scanner</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #070a13;
       --surface: #0f172a;
-      --surface-elevated: #162036;
+      --surface-card: #162036;
       --border: #1e293b;
       --primary: #38bdf8;
       --emerald: #10b981;
       --amber: #f59e0b;
+      --rose: #f43f5e;
       --text: #f8fafc;
       --text-muted: #94a3af;
     }
@@ -25,10 +26,10 @@
       width: 100%; max-width: 1350px; display: flex; justify-content: space-between; align-items: center;
       padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
     }
-    .brand-group { display: flex; align-items: center; gap: 0.75rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
     .brand-icon { font-size: 1.75rem; }
     .brand-title { font-size: 1.35rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-    .badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 9999px; background: var(--surface-elevated); color: var(--primary); border: 1px solid var(--border); }
+    .version-tag { font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid var(--primary); }
 
     .workspace { width: 100%; max-width: 1350px; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
     @media (min-width: 1024px) {
@@ -40,6 +41,7 @@
       padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
     }
 
+    /* Upload & Action Toolbar */
     .dropzone {
       border: 2px dashed #334155; border-radius: 12px; padding: 1.75rem 1rem; text-align: center;
       cursor: pointer; transition: all 0.2s ease; position: relative; background: rgba(15, 23, 42, 0.4);
@@ -55,39 +57,50 @@
     }
     .btn:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .btn-secondary { background: var(--surface-elevated); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary { background: var(--surface-card); color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { background: #1e293b; }
+    .btn-active { border-color: var(--primary); color: var(--primary); }
 
-    /* Unified Canvas Workspace */
-    .canvas-stage {
-      width: 100%; min-height: 280px; max-height: 600px; background: #030712;
+    /* Verified Viewport: Synchronized container */
+    .stage-container {
+      width: 100%; min-height: 280px; max-height: 580px; background: #030712;
       border-radius: 10px; overflow: auto; display: flex; justify-content: center; align-items: center;
       border: 1px solid var(--border); position: relative;
     }
-    #main-canvas { display: block; max-width: 100%; height: auto; object-fit: contain; }
-
-    /* Progress Notification */
-    .progress-bar-wrap { display: none; flex-direction: column; gap: 0.4rem; }
-    .progress-track { width: 100%; height: 6px; background: #1e293b; border-radius: 9999px; overflow: hidden; }
-    .progress-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.15s; }
-    .progress-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
-
-    /* Executive Dossier */
-    .essentials-card {
-      background: var(--surface-elevated); border: 1px solid #293548; border-radius: 10px;
-      padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.75rem;
+    .viewer-box {
+      position: relative; display: inline-block; line-height: 0; margin: auto;
     }
-    .essentials-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
-    
-    .essentials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; }
-    .essential-item { display: flex; flex-direction: column; gap: 0.2rem; }
-    .essential-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-    .essential-value { font-size: 1.05rem; font-weight: 700; color: #fff; word-break: break-word; }
-    .essential-value.highlight-green { color: var(--emerald); }
+    #stage-canvas {
+      display: block; max-width: 100%; max-height: 560px; width: auto; height: auto;
+    }
+    #highlight-layer {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+    }
 
-    .tag-section { display: flex; flex-direction: column; gap: 0.35rem; }
+    /* Progress Banner */
+    .progress-box { display: none; flex-direction: column; gap: 0.4rem; }
+    .track { width: 100%; height: 6px; background: #1e293b; border-radius: 9999px; overflow: hidden; }
+    .fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.15s; }
+    .info { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Executive Findings Card */
+    .summary-card {
+      background: var(--surface-card); border: 1px solid #293548; border-radius: 10px;
+      padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .summary-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .doc-badge { display: none; font-size: 0.75rem; color: var(--amber); border: 1px solid var(--amber); padding: 0.15rem 0.5rem; border-radius: 4px; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; }
+    .stat-col { display: flex; flex-direction: column; gap: 0.2rem; }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .stat-val.money { color: var(--emerald); }
+
+    /* Verified Chips */
+    .tag-group { display: none; flex-direction: column; gap: 0.35rem; }
     .tag-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .tag-cluster { display: flex; gap: 0.4rem; flex-wrap: wrap; min-height: 24px; }
+    .chip-wrap { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .chip {
       padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
       display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; transition: transform 0.1s;
@@ -95,13 +108,13 @@
     .chip:hover { transform: translateY(-1px); }
     .chip-money { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     .chip-date { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .chip-id { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
 
-    .tab-bar { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    /* Tabs & Content */
+    .tab-nav { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
     .tab-btn { background: none; border: none; color: var(--text-muted); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-    .tab-btn.active { background: var(--surface-elevated); color: var(--primary); }
-    .tab-content { display: none; max-height: 320px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6; }
-    .tab-content.active { display: block; }
+    .tab-btn.active { background: var(--surface-card); color: var(--primary); }
+    .tab-view { display: none; max-height: 320px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6; }
+    .tab-view.active { display: block; }
 
     pre { background: #030712; padding: 0.85rem; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.8rem; color: #38bdf8; }
   </style>
@@ -109,326 +122,356 @@
 <body>
 
   <header class="header-bar">
-    <div class="brand-group">
-      <span class="brand-icon">📑</span>
+    <div class="brand">
+      <span class="brand-icon">⚡</span>
       <span class="brand-title">DocuLens AI Pro</span>
-      <span class="badge">v4.0 Precision Engine</span>
+      <span class="version-tag">v5.0 Core Engine</span>
     </div>
-    <div id="engine-status" class="badge" style="color: var(--text-muted);">Ready</div>
+    <div id="status-pill" class="version-tag" style="color: var(--text-muted); border-color: var(--border); background: var(--surface);">Engine Ready</div>
   </header>
 
   <main class="workspace">
-    <!-- LEFT PANEL: Image Ingestion & Unified High-DPI Canvas -->
+    <!-- LEFT PANEL: Image & Real-Time Canvas -->
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <span style="font-weight: 600; font-size: 0.95rem;">Document Stage</span>
-        <span id="res-badge" style="font-size: 0.75rem; color: var(--text-muted);">No File</span>
+        <span id="dimension-badge" style="font-size: 0.75rem; color: var(--text-muted);">No File</span>
       </div>
 
       <div class="dropzone" id="dropzone">
-        <input type="file" id="file-selector" accept="image/*" />
-        <div style="font-size: 2rem; margin-bottom: 0.3rem;">📄</div>
-        <p style="font-weight: 600;">Upload document or receipt</p>
+        <input type="file" id="file-input" accept="image/*" />
+        <div style="font-size: 2rem; margin-bottom: 0.3rem;">📸</div>
+        <p style="font-weight: 600;">Tap to upload or take photo</p>
         <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">PNG, JPG, or WebP</p>
       </div>
 
       <div class="action-row">
-        <button id="extract-btn" class="btn" disabled>🚀 Run OCR</button>
-        <button id="bw-btn" class="btn btn-secondary" disabled>⚡ Enhance Contrast (B&W)</button>
+        <button id="ocr-btn" class="btn" disabled>🚀 Run OCR</button>
+        <button id="enhance-btn" class="btn btn-secondary" disabled>⚡ Enhance B&W (Off)</button>
         <button id="rotate-btn" class="btn btn-secondary" disabled>🔄 Rotate 90°</button>
         <button id="reset-btn" class="btn btn-secondary" disabled>Reset</button>
       </div>
 
-      <div class="progress-bar-wrap" id="progress-wrap">
-        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-        <div class="progress-info">
-          <span id="progress-label">Preparing OCR engine...</span>
-          <span id="progress-percent">0%</span>
+      <div class="progress-box" id="progress-box">
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <div class="info">
+          <span id="progress-text">Preparing Tesseract neural nets...</span>
+          <span id="progress-pct">0%</span>
         </div>
       </div>
 
-      <div class="canvas-stage" id="stage">
-        <canvas id="main-canvas"></canvas>
+      <div class="stage-container">
+        <div class="viewer-box" id="viewer-box">
+          <canvas id="stage-canvas"></canvas>
+          <canvas id="highlight-layer"></canvas>
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT PANEL: Precision Intelligence & Explanatory Output -->
+    <!-- RIGHT PANEL: Facts & Output -->
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 600; font-size: 0.95rem;">Extracted Intelligence</span>
+        <span style="font-weight: 600; font-size: 0.95rem;">Verified Intelligence</span>
         <button id="copy-btn" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">Copy JSON</button>
       </div>
 
-      <!-- KEY ESSENTIALS: Only shown if factually detected -->
-      <div class="essentials-card">
-        <div class="essentials-title">
+      <!-- KEY VERIFIED FINDINGS (No Assumptions) -->
+      <div class="summary-card">
+        <div class="summary-header">
           <span>Key Verified Essentials</span>
-          <span id="doc-type-badge" style="display: none; color: var(--amber); font-size: 0.75rem; border: 1px solid var(--amber); padding: 0.15rem 0.5rem; border-radius: 4px;"></span>
+          <span class="doc-badge" id="doc-badge"></span>
         </div>
-        <div class="essentials-grid">
-          <div class="essential-item">
-            <span class="essential-label">Verified Total</span>
-            <span class="essential-value" id="ess-amount">Not Mentioned</span>
+        <div class="summary-grid">
+          <div class="stat-col">
+            <span class="stat-label">Verified Total</span>
+            <span class="stat-val" id="stat-amount">Not Mentioned</span>
           </div>
-          <div class="essential-item">
-            <span class="essential-label">Date Identified</span>
-            <span class="essential-value" id="ess-date">Not Mentioned</span>
+          <div class="stat-col">
+            <span class="stat-label">Date Identified</span>
+            <span class="stat-val" id="stat-date">Not Mentioned</span>
           </div>
-          <div class="essential-item">
-            <span class="essential-label">Invoice / Ref No.</span>
-            <span class="essential-value" id="ess-ref">Not Mentioned</span>
+          <div class="stat-col">
+            <span class="stat-label">Invoice / Ref No.</span>
+            <span class="stat-val" id="stat-ref">Not Mentioned</span>
           </div>
-          <div class="essential-item">
-            <span class="essential-label">Confidence</span>
-            <span class="essential-value" id="ess-conf">--%</span>
+          <div class="stat-col">
+            <span class="stat-label">Confidence</span>
+            <span class="stat-val" id="stat-conf">--%</span>
           </div>
         </div>
       </div>
 
-      <!-- VERIFIED AMOUNTS: Only appears if valid money exists -->
-      <div class="tag-section" id="money-section" style="display: none;">
-        <div class="tag-title">Verified Currency Figures</div>
-        <div class="tag-cluster" id="amounts-chips"></div>
+      <!-- AMOUNTS SECTION (Shown ONLY when verified currency exists) -->
+      <div class="tag-group" id="money-group">
+        <div class="tag-title">Verified Currency Figures (₹ / Rs / Total)</div>
+        <div class="chip-wrap" id="money-chips"></div>
       </div>
 
-      <!-- METADATA & REFS -->
-      <div class="tag-section" id="meta-section" style="display: none;">
+      <!-- METADATA SECTION -->
+      <div class="tag-group" id="meta-group">
         <div class="tag-title">Verified References & Dates</div>
-        <div class="tag-cluster" id="meta-chips"></div>
+        <div class="chip-wrap" id="meta-chips"></div>
       </div>
 
       <!-- TABS -->
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="tab-structured">Meaningful Text Lines</button>
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-lines">Clean Text Lines</button>
         <button class="tab-btn" data-tab="tab-json">JSON Schema</button>
       </div>
 
-      <div id="tab-structured" class="tab-content active">
-        <div id="structured-text" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;">Awaiting document analysis...</div>
+      <div id="tab-lines" class="tab-view active">
+        <div id="lines-text" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;">Awaiting document...</div>
       </div>
 
-      <div id="tab-json" class="tab-content">
+      <div id="tab-json" class="tab-view">
         <pre><code id="json-code">{}</code></pre>
       </div>
     </div>
   </main>
 
   <script>
-    const fileSelector = document.getElementById('file-selector');
-    const canvas = document.getElementById('main-canvas');
-    const ctx = canvas.getContext('2d');
-    const extractBtn = document.getElementById('extract-btn');
-    const bwBtn = document.getElementById('bw-btn');
+    const fileInput = document.getElementById('file-input');
+    const stageCanvas = document.getElementById('stage-canvas');
+    const highlightLayer = document.getElementById('highlight-layer');
+    const sCtx = stageCanvas.getContext('2d');
+    const hCtx = highlightLayer.getContext('2d');
+
+    const ocrBtn = document.getElementById('ocr-btn');
+    const enhanceBtn = document.getElementById('enhance-btn');
     const rotateBtn = document.getElementById('rotate-btn');
     const resetBtn = document.getElementById('reset-btn');
-    const progressWrap = document.getElementById('progress-wrap');
-    const progressFill = document.getElementById('progress-fill');
-    const progressLabel = document.getElementById('progress-label');
-    const progressPercent = document.getElementById('progress-percent');
-    const engineStatus = document.getElementById('engine-status');
-    const resBadge = document.getElementById('res-badge');
+    const progressBox = document.getElementById('progress-box');
+    const fill = document.getElementById('fill');
+    const progressText = document.getElementById('progress-text');
+    const progressPct = document.getElementById('progress-pct');
+    const statusPill = document.getElementById('status-pill');
+    const dimensionBadge = document.getElementById('dimension-badge');
 
-    // Essentials
-    const essAmount = document.getElementById('ess-amount');
-    const essDate = document.getElementById('ess-date');
-    const essRef = document.getElementById('ess-ref');
-    const essConf = document.getElementById('ess-conf');
-    const docTypeBadge = document.getElementById('doc-type-badge');
+    // Stats
+    const statAmount = document.getElementById('stat-amount');
+    const statDate = document.getElementById('stat-date');
+    const statRef = document.getElementById('stat-ref');
+    const statConf = document.getElementById('stat-conf');
+    const docBadge = document.getElementById('doc-badge');
 
-    // Dynamic Sections
-    const moneySection = document.getElementById('money-section');
-    const metaSection = document.getElementById('meta-section');
-    const amountsChips = document.getElementById('amounts-chips');
+    // Chips & Panes
+    const moneyGroup = document.getElementById('money-group');
+    const metaGroup = document.getElementById('meta-group');
+    const moneyChips = document.getElementById('money-chips');
     const metaChips = document.getElementById('meta-chips');
-    const structuredText = document.getElementById('structured-text');
+    const linesText = document.getElementById('lines-text');
     const jsonCode = document.getElementById('json-code');
     const copyBtn = document.getElementById('copy-btn');
 
-    let rawImg = new Image();
-    let currentImgData = null;
+    let originalImg = new Image();
+    let isEnhanced = false;
     let ocrWords = [];
 
-    // Tabs
+    // Tab switcher
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
       });
     });
 
-    // Ingest Image & Draw Directly to Native Canvas
-    fileSelector.addEventListener('change', (e) => {
+    // Ingest Image
+    fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        rawImg = new Image();
-        rawImg.onload = () => {
-          canvas.width = rawImg.naturalWidth;
-          canvas.height = rawImg.naturalHeight;
-          ctx.drawImage(rawImg, 0, 0);
-          currentImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        originalImg = new Image();
+        originalImg.onload = () => {
+          isEnhanced = false;
+          enhanceBtn.innerText = "⚡ Enhance B&W (Off)";
+          enhanceBtn.classList.remove('btn-active');
 
-          extractBtn.disabled = false;
-          bwBtn.disabled = false;
+          renderBaseImage(originalImg);
+
+          ocrBtn.disabled = false;
+          enhanceBtn.disabled = false;
           rotateBtn.disabled = false;
           resetBtn.disabled = false;
-          resBadge.innerText = `${canvas.width} × ${canvas.height} px`;
-          engineStatus.innerText = "Loaded";
-          engineStatus.style.color = "#38bdf8";
+          dimensionBadge.innerText = `${originalImg.naturalWidth} × ${originalImg.naturalHeight} px`;
+          statusPill.innerText = "Document Loaded";
+          statusPill.style.color = "#38bdf8";
         };
-        rawImg.src = evt.target.result;
+        originalImg.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     });
 
-    // Dynamic B&W Thresholding & Edge Contrast (Otsu-style)
-    bwBtn.addEventListener('click', () => {
-      if (!currentImgData) return;
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const d = imgData.data;
+    // Render source to canvas and sync coordinate systems
+    function renderBaseImage(source) {
+      stageCanvas.width = source.naturalWidth || source.width;
+      stageCanvas.height = source.naturalHeight || source.height;
 
-      // 1. Calculate Average Luminance
-      let totalLuminance = 0;
-      const totalPixels = canvas.width * canvas.height;
-      for (let i = 0; i < d.length; i += 4) {
-        totalLuminance += (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]);
+      highlightLayer.width = stageCanvas.width;
+      highlightLayer.height = stageCanvas.height;
+
+      sCtx.drawImage(source, 0, 0);
+      hCtx.clearRect(0, 0, highlightLayer.width, highlightLayer.height);
+    }
+
+    // High-Contrast Adaptive B&W Engine (Toggleable)
+    enhanceBtn.addEventListener('click', () => {
+      if (!originalImg.src) return;
+
+      if (!isEnhanced) {
+        // Run High-Contrast Binarization
+        const imgData = sCtx.getImageData(0, 0, stageCanvas.width, stageCanvas.height);
+        const d = imgData.data;
+
+        // Calculate dynamic luminance threshold
+        let totalLum = 0;
+        const totalPx = stageCanvas.width * stageCanvas.height;
+        for (let i = 0; i < d.length; i += 4) {
+          totalLum += (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]);
+        }
+        const avgLum = totalLum / totalPx;
+        const threshold = Math.max(80, Math.min(170, avgLum * 0.92));
+
+        for (let i = 0; i < d.length; i += 4) {
+          const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+          const val = lum > threshold ? 255 : 0;
+          d[i] = val; d[i+1] = val; d[i+2] = val;
+        }
+
+        sCtx.putImageData(imgData, 0, 0);
+        isEnhanced = true;
+        enhanceBtn.innerText = "⚡ Enhance B&W (On)";
+        enhanceBtn.classList.add('btn-active');
+        statusPill.innerText = "B&W Applied";
+      } else {
+        // Revert to original
+        sCtx.drawImage(originalImg, 0, 0);
+        isEnhanced = false;
+        enhanceBtn.innerText = "⚡ Enhance B&W (Off)";
+        enhanceBtn.classList.remove('btn-active');
+        statusPill.innerText = "Original Restored";
       }
-      const avgLuminance = totalLuminance / totalPixels;
-      // Set dynamic threshold slightly below mean to clean gray background without losing strokes
-      const threshold = Math.max(90, Math.min(160, avgLuminance * 0.9));
 
-      // 2. High-Contrast Binarization
-      for (let i = 0; i < d.length; i += 4) {
-        const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-        const val = lum > threshold ? 255 : 0;
-        d[i] = val;
-        d[i+1] = val;
-        d[i+2] = val;
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-      currentImgData = imgData;
-      engineStatus.innerText = "B&W Enhanced";
-      engineStatus.style.color = "var(--emerald)";
+      if (ocrWords.length > 0) drawBoundingBoxes(ocrWords);
     });
 
-    // Rotate 90 Degrees Matrix
+    // Rotate 90°
     rotateBtn.addEventListener('click', () => {
       const tempCvs = document.createElement('canvas');
       const tCtx = tempCvs.getContext('2d');
-      tempCvs.width = canvas.height;
-      tempCvs.height = canvas.width;
+      tempCvs.width = stageCanvas.height;
+      tempCvs.height = stageCanvas.width;
 
       tCtx.translate(tempCvs.width / 2, tempCvs.height / 2);
       tCtx.rotate((90 * Math.PI) / 180);
-      tCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+      tCtx.drawImage(stageCanvas, -stageCanvas.width / 2, -stageCanvas.height / 2);
 
-      canvas.width = tempCvs.width;
-      canvas.height = tempCvs.height;
-      ctx.drawImage(tempCvs, 0, 0);
-      currentImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      resBadge.innerText = `${canvas.width} × ${canvas.height} px`;
-      drawBoxes(ocrWords);
+      stageCanvas.width = tempCvs.width;
+      stageCanvas.height = tempCvs.height;
+      highlightLayer.width = tempCvs.width;
+      highlightLayer.height = tempCvs.height;
+
+      sCtx.drawImage(tempCvs, 0, 0);
+      hCtx.clearRect(0, 0, highlightLayer.width, highlightLayer.height);
+
+      dimensionBadge.innerText = `${stageCanvas.width} × ${stageCanvas.height} px`;
+      drawBoundingBoxes(ocrWords);
     });
 
-    // Run OCR
-    extractBtn.addEventListener('click', async () => {
-      extractBtn.disabled = true;
-      progressWrap.style.display = 'flex';
-      engineStatus.innerText = "Processing...";
+    // Run OCR Engine
+    ocrBtn.addEventListener('click', async () => {
+      ocrBtn.disabled = true;
+      progressBox.style.display = 'flex';
+      statusPill.innerText = "Analyzing Text...";
 
       try {
         const worker = await Tesseract.createWorker('eng', 1, {
           logger: m => {
             if (m.status === 'recognizing text') {
               const p = Math.round((m.progress || 0) * 100);
-              progressFill.style.width = p + '%';
-              progressPercent.innerText = p + '%';
-              progressLabel.innerText = `Analyzing document geometry (${p}%)...`;
+              fill.style.width = p + '%';
+              progressPct.innerText = p + '%';
+              progressText.innerText = `Extracting words & bounds (${p}%)...`;
             }
           }
         });
 
-        const res = await worker.recognize(canvas.toDataURL());
+        // Pass direct raster canvas data
+        const res = await worker.recognize(stageCanvas.toDataURL());
         await worker.terminate();
 
-        progressWrap.style.display = 'none';
-        extractBtn.disabled = false;
-        engineStatus.innerText = "Complete";
-        engineStatus.style.color = "var(--emerald)";
+        progressBox.style.display = 'none';
+        ocrBtn.disabled = false;
+        statusPill.innerText = "Complete";
+        statusPill.style.color = "var(--emerald)";
 
         ocrWords = res.data.words || [];
-        processDocumentIntelligence(res.data);
+        processVerifiedIntelligence(res.data);
       } catch (err) {
-        alert("OCR Error: " + err.message);
-        progressWrap.style.display = 'none';
-        extractBtn.disabled = false;
+        alert("OCR Execution Error: " + err.message);
+        progressBox.style.display = 'none';
+        ocrBtn.disabled = false;
       }
     });
 
-    // 100% Accurate Canvas Highlighting (Direct In-Memory Coordinates)
-    function drawBoxes(words, activeWord = null) {
-      if (!currentImgData) return;
-      ctx.putImageData(currentImgData, 0, 0); // Clear to clean image state
-
+    // 100% Mathematically Locked Highlight Renderer
+    function drawBoundingBoxes(words, targetWord = null) {
+      hCtx.clearRect(0, 0, highlightLayer.width, highlightLayer.height);
       if (!words || words.length === 0) return;
 
       words.forEach(w => {
-        if (!w.text || !isLegibleToken(w.text)) return;
+        if (!w.text || !isValidToken(w.text)) return;
 
         const { x0, y0, x1, y1 } = w.bbox;
-        const wBox = x1 - x0;
-        const hBox = y1 - y0;
+        const boxW = x1 - x0;
+        const boxH = y1 - y0;
 
-        const isMatch = activeWord && w.text.toLowerCase().includes(activeWord.toLowerCase());
+        const isMatch = targetWord && w.text.toLowerCase().includes(targetWord.toLowerCase());
 
-        ctx.strokeStyle = isMatch ? '#10b981' : 'rgba(56, 189, 248, 0.45)';
-        ctx.lineWidth = isMatch ? 3 : 1.5;
-        ctx.strokeRect(x0, y0, wBox, hBox);
+        hCtx.strokeStyle = isMatch ? '#10b981' : 'rgba(56, 189, 248, 0.45)';
+        hCtx.lineWidth = isMatch ? 4 : 2;
+        hCtx.strokeRect(x0, y0, boxW, boxH);
 
         if (isMatch) {
-          ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-          ctx.fillRect(x0, y0, wBox, hBox);
+          hCtx.fillStyle = 'rgba(16, 185, 129, 0.28)';
+          hCtx.fillRect(x0, y0, boxW, boxH);
         }
       });
     }
 
-    // Token Validator: Filters out single-character hallucinations & garbage
-    function isLegibleToken(str) {
+    // Token Hygiene: Removes single-letter OCR hallucinations and barcode symbols
+    function isValidToken(str) {
       const clean = str.trim();
       if (clean.length === 0) return false;
       if (clean.length === 1 && !/[0-9a-zA-Z]/.test(clean)) return false;
-      // Repetitive symbols
       if (/^([|\/\\_\-.,:;=~#*^!@$%&()\[\]{}])\1+$/.test(clean)) return false;
-      // Long vowel-less gibberish
       if (clean.length > 7 && !/[aeiouyAEIOUY0-9]/i.test(clean)) return false;
       return true;
     }
 
-    // Intelligence & Zero-Guess Logic
-    function processDocumentIntelligence(data) {
-      const words = (data.words || []).filter(w => isLegibleToken(w.text));
+    // Zero-Guess Extraction
+    function processVerifiedIntelligence(data) {
+      const words = (data.words || []).filter(w => isValidToken(w.text));
       const rawLines = (data.text || '').split('\n').map(l => l.trim()).filter(Boolean);
 
-      // Clean lines to readable words & short-forms
+      // Clean lines
       const cleanLines = [];
-      rawLines.forEach(l => {
-        const lineTokens = l.split(/\s+/).filter(isLegibleToken);
-        if (lineTokens.length > 0) {
-          cleanLines.push(lineTokens.join(' '));
+      rawLines.forEach(line => {
+        const validTokens = line.split(/\s+/).filter(isValidToken);
+        if (validTokens.length > 0) {
+          cleanLines.push(validTokens.join(' '));
         }
       });
 
-      // 1. Overall Confidence
+      // 1. Accuracy
       const avgConf = words.length > 0
         ? Math.round(words.reduce((sum, w) => sum + (w.confidence || 0), 0) / words.length)
         : 0;
-      essConf.innerText = avgConf + '%';
+      statConf.innerText = avgConf + '%';
 
-      // 2. Strict Document Classification (100% Sure - No Guessing)
+      // 2. Strict Document Classification (100% Verbatim Match Only)
       const fullTextUpper = cleanLines.join(' ').toUpperCase();
       const verifiedTypes = [
         "TAX INVOICE", "INVOICE", "CASH RECEIPT", "RECEIPT",
@@ -436,89 +479,87 @@
         "PRESCRIPTION", "PURCHASE ORDER"
       ];
 
-      let detectedType = null;
+      let matchedType = null;
       for (const t of verifiedTypes) {
         if (fullTextUpper.includes(t)) {
-          detectedType = t;
+          matchedType = t;
           break;
         }
       }
 
-      if (detectedType) {
-        docTypeBadge.innerText = detectedType;
-        docTypeBadge.style.display = 'inline-block';
+      if (matchedType) {
+        docBadge.innerText = matchedType;
+        docBadge.style.display = 'inline-block';
       } else {
-        docTypeBadge.style.display = 'none';
+        docBadge.style.display = 'none';
       }
 
-      // 3. Strict Financial Extraction (No Assumptions)
+      // 3. Strict Financial Filter (₹ / Rs / Total Anchor Only)
       const verifiedAmounts = [];
-      const explicitCurrencyRegex = /(?:₹|rs\.?|inr|\$|eur|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
-      const totalContextRegex = /(?:grand\s*total|total\s*amount|amount\s*paid|subtotal|balance\s*due|net\s*payable)[\s:=]+(?:₹|rs\.?)?\s*([0-9,]+\.[0-9]{2}|[0-9,]+)/i;
+      const currencyPattern = /(?:₹|rs\.?|inr|\$|eur|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
+      const totalAnchorPattern = /(?:grand\s*total|total\s*amount|amount\s*paid|subtotal|balance\s*due|net\s*payable)[\s:=]+(?:₹|rs\.?)?\s*([0-9,]+\.[0-9]{2}|[0-9,]+)/i;
 
       cleanLines.forEach(line => {
         let m;
-        while ((m = explicitCurrencyRegex.exec(line)) !== null) {
-          const val = m[0].replace(/\s+/g, ' ');
-          if (!verifiedAmounts.includes(val)) verifiedAmounts.push(val);
+        while ((m = currencyPattern.exec(line)) !== null) {
+          const formatted = m[0].replace(/\s+/g, ' ');
+          if (!verifiedAmounts.includes(formatted)) verifiedAmounts.push(formatted);
         }
-        const ctxMatch = line.match(totalContextRegex);
-        if (ctxMatch && ctxMatch[1]) {
-          const candidate = "₹ " + ctxMatch[1].replace(/,/g, '');
-          if (!verifiedAmounts.some(v => v.includes(ctxMatch[1]))) {
+        const anchorMatch = line.match(totalAnchorPattern);
+        if (anchorMatch && anchorMatch[1]) {
+          const candidate = "₹ " + anchorMatch[1].replace(/,/g, '');
+          if (!verifiedAmounts.some(v => v.includes(anchorMatch[1]))) {
             verifiedAmounts.push(candidate);
           }
         }
       });
 
-      // Show/Hide Financial Dashboard Elements
       if (verifiedAmounts.length > 0) {
-        let maxTotal = 0;
+        let maxVal = 0;
         verifiedAmounts.forEach(amt => {
           const num = parseFloat(amt.replace(/[^0-9.]/g, ''));
-          if (num && num > maxTotal) maxTotal = num;
+          if (num && num > maxVal) maxVal = num;
         });
-        essAmount.innerText = `₹${maxTotal.toLocaleString()}`;
-        essAmount.className = 'essential-value highlight-green';
+        statAmount.innerText = `₹${maxVal.toLocaleString()}`;
+        statAmount.className = 'stat-val money';
 
-        moneySection.style.display = 'flex';
-        renderChipGroup(amountsChips, verifiedAmounts, 'chip-money');
+        moneyGroup.style.display = 'flex';
+        renderChips(moneyChips, verifiedAmounts, 'chip-money');
       } else {
-        essAmount.innerText = 'Not Mentioned';
-        essAmount.className = 'essential-value';
-        moneySection.style.display = 'none';
+        statAmount.innerText = 'Not Mentioned';
+        statAmount.className = 'stat-val';
+        moneyGroup.style.display = 'none';
       }
 
       // 4. Dates
       const dateRegex = /\b([0-3]?[0-9][\/\-\.][0-1]?[0-9][\/\-\.](?:20|19)?[0-9]{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+[0-9]{1,2},?\s+[0-9]{4})\b/gi;
       const detectedDates = [...new Set(cleanLines.join(' ').match(dateRegex) || [])];
-      essDate.innerText = detectedDates.length > 0 ? detectedDates[0] : 'Not Mentioned';
+      statDate.innerText = detectedDates.length > 0 ? detectedDates[0] : 'Not Mentioned';
 
-      // 5. Invoices / References
+      // 5. IDs & References
       const idRegex = /(?:inv(?:oice)?|bill|receipt|order|gstin|ref)[\s#.:-]*([a-z0-9\-\/]{4,20})/gi;
       const detectedIds = [];
       let idMatch;
       while ((idMatch = idRegex.exec(cleanLines.join(' '))) !== null) {
         if (!detectedIds.includes(idMatch[0])) detectedIds.push(idMatch[0]);
       }
-      essRef.innerText = detectedIds.length > 0 ? detectedIds[0] : 'Not Mentioned';
+      statRef.innerText = detectedIds.length > 0 ? detectedIds[0] : 'Not Mentioned';
 
-      // Meta Chips
       const allMeta = [...detectedDates, ...detectedIds];
       if (allMeta.length > 0) {
-        metaSection.style.display = 'flex';
-        renderChipGroup(metaChips, allMeta, 'chip-date');
+        metaGroup.style.display = 'flex';
+        renderChips(metaChips, allMeta, 'chip-date');
       } else {
-        metaSection.style.display = 'none';
+        metaGroup.style.display = 'none';
       }
 
-      // 6. Text & JSON
-      structuredText.innerText = cleanLines.join('\n') || "No legible text found.";
+      // 6. Output Lists
+      linesText.innerText = cleanLines.join('\n') || "No legible text found.";
 
       const schema = {
-        document_classification: detectedType || "Unspecified / Not explicitly stated",
+        document_classification: matchedType || "Unspecified / Not explicitly stated",
         verified_essentials: {
-          total_amount: verifiedAmounts.length > 0 ? essAmount.innerText : null,
+          total_amount: verifiedAmounts.length > 0 ? statAmount.innerText : null,
           dates: detectedDates,
           identifiers: detectedIds,
           ocr_confidence: avgConf + '%'
@@ -527,20 +568,20 @@
       };
       jsonCode.innerText = JSON.stringify(schema, null, 2);
 
-      // Render accurate bounding boxes
-      drawBoxes(ocrWords);
+      // Render accurate highlights
+      drawBoundingBoxes(ocrWords);
     }
 
-    function renderChipGroup(container, items, chipClass) {
+    function renderChips(container, items, chipClass) {
       container.innerHTML = '';
       items.forEach(text => {
         const chip = document.createElement('span');
         chip.className = `chip ${chipClass}`;
         chip.innerText = text;
-        chip.title = "Click to isolate exact word coordinates on image";
+        chip.title = "Click to flash coordinate bounding box";
         chip.onclick = () => {
           const token = text.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(' ')[0];
-          drawBoxes(ocrWords, token);
+          drawBoundingBoxes(ocrWords, token);
         };
         container.appendChild(chip);
       });
@@ -553,27 +594,33 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      currentImgData = null;
-      rawImg = new Image();
-      structuredText.innerText = 'Awaiting document analysis...';
+      sCtx.clearRect(0, 0, stageCanvas.width, stageCanvas.height);
+      hCtx.clearRect(0, 0, highlightLayer.width, highlightLayer.height);
+      originalImg = new Image();
+      isEnhanced = false;
+      ocrWords = [];
+
+      linesText.innerText = 'Awaiting document...';
       jsonCode.innerText = '{}';
-      essAmount.innerText = 'Not Mentioned';
-      essAmount.className = 'essential-value';
-      essDate.innerText = 'Not Mentioned';
-      essRef.innerText = 'Not Mentioned';
-      essConf.innerText = '--%';
-      docTypeBadge.style.display = 'none';
-      moneySection.style.display = 'none';
-      metaSection.style.display = 'none';
-      extractBtn.disabled = true;
-      bwBtn.disabled = true;
+      statAmount.innerText = 'Not Mentioned';
+      statAmount.className = 'stat-val';
+      statDate.innerText = 'Not Mentioned';
+      statRef.innerText = 'Not Mentioned';
+      statConf.innerText = '--%';
+      docBadge.style.display = 'none';
+      moneyGroup.style.display = 'none';
+      metaGroup.style.display = 'none';
+
+      enhanceBtn.innerText = "⚡ Enhance B&W (Off)";
+      enhanceBtn.classList.remove('btn-active');
+      ocrBtn.disabled = true;
+      enhanceBtn.disabled = true;
       rotateBtn.disabled = true;
       resetBtn.disabled = true;
-      fileSelector.value = '';
-      resBadge.innerText = 'No File';
-      engineStatus.innerText = 'Ready';
-      engineStatus.style.color = 'var(--text-muted)';
+      fileInput.value = '';
+      dimensionBadge.innerText = 'No File';
+      statusPill.innerText = 'Engine Ready';
+      statusPill.style.color = 'var(--text-muted)';
     });
   </script>
 </body>

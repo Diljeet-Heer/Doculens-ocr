@@ -3,212 +3,287 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DocuLens AI - Intelligent Document Scanner & OCR</title>
-  <!-- Load verified Tesseract.js v5 -->
+  <title>DocuLens AI - Intelligent Document Scanner</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #131b2e;
-      --card-border: #1e293b;
+      --bg: #090d16;
+      --surface: #111827;
+      --surface-border: #1f293d;
       --primary: #38bdf8;
-      --primary-hover: #0ea5e9;
-      --accent: #10b981;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --highlight: rgba(56, 189, 248, 0.4);
-      --highlight-border: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+    body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; }
 
-    header { text-align: center; margin-bottom: 2rem; max-width: 800px; }
-    header h1 { font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
-    header p { color: var(--muted); font-size: 0.95rem; }
+    /* Header Nav */
+    .app-header {
+      width: 100%; max-width: 1250px; display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 0 1.5rem; border-bottom: 1px solid var(--surface-border); margin-bottom: 1.5rem;
+    }
+    .brand { display: flex; align-items: center; gap: 0.6rem; }
+    .brand-logo { font-size: 1.6rem; }
+    .brand-name { font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    .badge { background: var(--surface-border); color: var(--primary); font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 99px; font-weight: 600; }
 
-    .main-container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
-    @media(min-width: 900px) { .main-container { grid-template-columns: 1.1fr 0.9fr; } }
+    /* Main Grid */
+    .dashboard-grid { width: 100%; max-width: 1250px; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    @media (min-width: 950px) { .dashboard-grid { grid-template-columns: 1.15fr 0.85fr; } }
 
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
-    .card-title { font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 14px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; }
+    .panel-title { font-size: 1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
 
-    /* Controls & Upload */
-    .upload-zone { border: 2px dashed #334155; border-radius: 10px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s; position: relative; }
-    .upload-zone:hover { border-color: var(--primary); }
-    .upload-zone input { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor: pointer; }
-    
-    .button-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    button { background: var(--primary); color: #000; font-weight: 600; border: none; border-radius: 6px; padding: 0.6rem 1.2rem; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; }
-    button:hover { background: var(--primary-hover); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.secondary { background: #334155; color: #fff; }
-    button.secondary:hover { background: #475569; }
+    /* Interactive Upload Box */
+    .drop-zone {
+      border: 2px dashed #2d3748; border-radius: 12px; padding: 1.75rem 1rem; text-align: center;
+      cursor: pointer; transition: all 0.25s ease; position: relative; background: rgba(15, 23, 42, 0.4);
+    }
+    .drop-zone:hover { border-color: var(--primary); background: var(--primary-glow); }
+    .drop-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-    /* Canvas / Image Stage */
-    .viewer-wrap { position: relative; width: 100%; min-height: 250px; background: #020617; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-    #source-image { max-width: 100%; height: auto; display: block; user-select: none; }
-    #overlay-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+    /* Action Toolbar */
+    .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .btn {
+      background: var(--primary); color: #000; font-weight: 600; border: none; border-radius: 8px;
+      padding: 0.65rem 1.25rem; font-size: 0.85rem; cursor: pointer; transition: transform 0.1s, opacity 0.2s;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+    .btn-secondary:hover { background: #334155; }
 
-    /* Progress bar */
-    .progress-wrap { display: none; flex-direction: column; gap: 0.4rem; }
-    .progress-bar-bg { width: 100%; height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.2s; }
-    .progress-status { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; }
+    /* Viewport / Stage */
+    .viewport {
+      position: relative; width: 100%; min-height: 280px; max-height: 520px; background: #060911;
+      border-radius: 10px; overflow: hidden; display: flex; justify-content: center; align-items: center;
+      border: 1px solid #1a2234;
+    }
+    #source-img { max-width: 100%; max-height: 520px; object-fit: contain; display: block; }
+    #overlay-cvs { position: absolute; top: 0; left: 0; pointer-events: none; }
 
-    /* Output Analytics */
-    .parsed-box { display: flex; flex-direction: column; gap: 0.75rem; }
-    .entity-tag { display: inline-flex; align-items: center; padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: transform 0.1s, background 0.2s; }
-    .entity-tag:hover { transform: translateY(-1px); }
-    .tag-money { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent); color: #34d399; }
-    .tag-date { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; }
-    .tag-id { background: rgba(139, 92, 246, 0.15); border: 1px solid #8b5cf6; color: #c084fc; }
+    /* Progress Indicator */
+    .progress-box { display: none; flex-direction: column; gap: 0.4rem; }
+    .bar-bg { width: 100%; height: 6px; background: #1f293d; border-radius: 99px; overflow: hidden; }
+    .bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.15s ease; }
+    .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
 
-    .results-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
-    .tab-btn { background: transparent; color: var(--muted); border: none; padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; font-weight: 500; }
+    /* Metrics Summary Strip */
+    .metrics-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .metric-card { background: #0c1220; border: 1px solid var(--surface-border); border-radius: 8px; padding: 0.6rem; text-align: center; }
+    .metric-val { font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Interactive Insight Cards */
+    .insight-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .insight-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .chip-cloud { display: flex; gap: 0.4rem; flex-wrap: wrap; min-height: 28px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 6px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform 0.1s, border-color 0.2s;
+    }
+    .chip:hover { transform: translateY(-1px); }
+    .chip-money { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .chip-date { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .chip-id { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+    .chip-noise { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); font-size: 0.75rem; }
+
+    /* Tabs & Content */
+    .tab-nav { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--surface-border); padding-bottom: 0.4rem; }
+    .tab-btn { background: none; border: none; color: var(--text-muted); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
     .tab-btn.active { background: #1e293b; color: var(--primary); }
 
-    .tab-content { display: none; max-height: 400px; overflow-y: auto; font-size: 0.9rem; line-height: 1.5; padding-right: 0.5rem; }
-    .tab-content.active { display: block; }
-    pre { background: #020617; padding: 0.75rem; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 0.8rem; color: #cbd5e1; }
+    .tab-pane { display: none; max-height: 320px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6; }
+    .tab-pane.active { display: block; }
+
+    .audit-card { background: #0c1220; border-left: 3px solid var(--primary); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 0.6rem; }
+    .audit-title { font-weight: 600; color: #fff; margin-bottom: 0.2rem; }
+    .audit-desc { color: var(--text-muted); font-size: 0.8rem; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>DocuLens AI Document Scanner</h1>
-    <p>Zero-cloud client-side OCR. Automatically extracts structured metadata, validates true monetary figures with currency/label anchors, and renders scale-accurate text bounding boxes.</p>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-logo">🔍</span>
+      <span class="brand-name">DocuLens AI</span>
+      <span class="badge">v2.0 Pro</span>
+    </div>
+    <div id="status-pill" class="badge" style="color: #9ca3af; background: #111827;">System Ready</div>
   </header>
 
-  <div class="main-container">
-    <!-- LEFT: Image Input & Display Canvas -->
-    <div class="card">
-      <div class="card-title">
-        <span>Document Preview & Visual Boxes</span>
-        <span id="scale-indicator" style="font-size: 0.8rem; color: var(--muted);">Ready</span>
+  <main class="dashboard-grid">
+    <!-- LEFT PANEL: Image Ingestion & Interactive Canvas -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span>Visual Canvas</span></div>
+        <span id="canvas-resolution" style="font-size: 0.75rem; color: var(--text-muted);">No File</span>
       </div>
 
-      <div class="upload-zone" id="drop-zone">
+      <div class="drop-zone" id="drop-zone">
         <input type="file" id="file-input" accept="image/*" />
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
-        <p><strong>Click to upload</strong> or drag & drop a photo/receipt</p>
-        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">Supports PNG, JPG, WebP</p>
+        <div style="font-size: 2rem; margin-bottom: 0.3rem;">📸</div>
+        <p style="font-weight: 600;">Tap to snap or upload receipt / document</p>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Filters mobile status noise & calculates verified currency</p>
       </div>
 
-      <div class="button-group">
-        <button id="process-btn" disabled>🔍 Analyze Document</button>
-        <button id="contrast-btn" class="secondary" disabled>Enhance Contrast</button>
-        <button id="clear-btn" class="secondary" disabled>Clear</button>
+      <div class="toolbar">
+        <button id="run-btn" class="btn" disabled>🚀 Run Extraction</button>
+        <button id="contrast-btn" class="btn btn-secondary" disabled>⚡ Denoise / Contrast</button>
+        <button id="reset-btn" class="btn btn-secondary" disabled>Reset</button>
       </div>
 
-      <div class="progress-wrap" id="progress-wrap">
-        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-        <div class="progress-status">
-          <span id="status-label">Initializing engine...</span>
-          <span id="percent-label">0%</span>
+      <div class="progress-box" id="progress-box">
+        <div class="bar-bg"><div class="bar-fill" id="bar-fill"></div></div>
+        <div class="status-row">
+          <span id="progress-msg">Initializing engine...</span>
+          <span id="progress-pct">0%</span>
         </div>
       </div>
 
-      <div class="viewer-wrap" id="viewer-container">
-        <img id="source-image" alt="Uploaded Document" style="display:none;" />
-        <canvas id="overlay-canvas"></canvas>
+      <div class="viewport" id="viewport">
+        <img id="source-img" style="display:none;" />
+        <canvas id="overlay-cvs"></canvas>
       </div>
     </div>
 
-    <!-- RIGHT: Structured Information Extraction -->
-    <div class="card">
-      <div class="card-title">
-        <span>Extracted Intelligence</span>
-        <button id="copy-json-btn" class="secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Copy JSON</button>
+    <!-- RIGHT PANEL: Intelligent Synthesis & Audit -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span>Extracted Intelligence</span></div>
+        <button id="copy-summary-btn" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Copy Report</button>
       </div>
 
-      <div class="parsed-box">
-        <div>
-          <h4 style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem;">VERIFIED AMOUNTS (Anchored with ₹/Rs/Total)</h4>
-          <div id="amounts-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>
-          </div>
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <div class="metric-val" id="metric-amount">₹0.00</div>
+          <div class="metric-lbl">Max Total</div>
         </div>
-
-        <div>
-          <h4 style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem;">DATES DETECTED</h4>
-          <div id="dates-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>
-          </div>
+        <div class="metric-card">
+          <div class="metric-val" id="metric-words">0</div>
+          <div class="metric-lbl">Words Found</div>
         </div>
-
-        <div>
-          <h4 style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem;">INVOICE / ID NUMBERS</h4>
-          <div id="ids-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>
-          </div>
+        <div class="metric-card">
+          <div class="metric-val" id="metric-conf">0%</div>
+          <div class="metric-lbl">OCR Accuracy</div>
         </div>
       </div>
 
-      <div class="results-tabs">
-        <button class="tab-btn active" data-tab="tab-text">Full Text</button>
-        <button class="tab-btn" data-tab="tab-json">JSON Tree</button>
+      <!-- Verified Amounts -->
+      <div class="insight-group">
+        <div class="insight-label">💰 Confirmed Financials (Filtered against random digits)</div>
+        <div class="chip-cloud" id="money-chips">
+          <span style="color: #4b5563; font-size: 0.8rem;">Awaiting analysis...</span>
+        </div>
       </div>
 
-      <div id="tab-text" class="tab-content active">
-        <div id="raw-text" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;">Awaiting document analysis...</div>
+      <!-- Dates & Document IDs -->
+      <div class="insight-group">
+        <div class="insight-label">📅 Dates & Document Identifiers</div>
+        <div class="chip-cloud" id="meta-chips">
+          <span style="color: #4b5563; font-size: 0.8rem;">Awaiting analysis...</span>
+        </div>
       </div>
-      <div id="tab-json" class="tab-content">
-        <pre><code id="json-output">{}</code></pre>
+
+      <!-- Mobile Noise System Bar -->
+      <div class="insight-group">
+        <div class="insight-label">📵 Screen Noise Isolated (Battery / Clock / Nav Bar)</div>
+        <div class="chip-cloud" id="noise-chips">
+          <span style="color: #4b5563; font-size: 0.8rem;">No mobile UI artifacts isolated.</span>
+        </div>
+      </div>
+
+      <!-- Tab Switcher for Explanatory View vs Raw JSON -->
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-audit">Smart Audit Breakdown</button>
+        <button class="tab-btn" data-tab="tab-raw">Raw Lines</button>
+        <button class="tab-btn" data-tab="tab-json">JSON Schema</button>
+      </div>
+
+      <div id="tab-audit" class="tab-pane active">
+        <div id="audit-list">
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Upload a document or mobile screenshot to view an explanatory narrative of all detected transactions.</p>
+        </div>
+      </div>
+
+      <div id="tab-raw" class="tab-pane">
+        <div id="raw-view" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;"></div>
+      </div>
+
+      <div id="tab-json" class="tab-pane">
+        <pre><code id="json-view" style="color: #38bdf8;">{}</code></pre>
       </div>
     </div>
-  </div>
+  </main>
 
   <script>
     const fileInput = document.getElementById('file-input');
-    const sourceImage = document.getElementById('source-image');
-    const canvas = document.getElementById('overlay-canvas');
+    const sourceImg = document.getElementById('source-img');
+    const canvas = document.getElementById('overlay-cvs');
     const ctx = canvas.getContext('2d');
-    const processBtn = document.getElementById('process-btn');
+    const runBtn = document.getElementById('run-btn');
     const contrastBtn = document.getElementById('contrast-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const progressWrap = document.getElementById('progress-wrap');
-    const progressFill = document.getElementById('progress-fill');
-    const statusLabel = document.getElementById('status-label');
-    const percentLabel = document.getElementById('percent-label');
-    const amountsContainer = document.getElementById('amounts-container');
-    const datesContainer = document.getElementById('dates-container');
-    const idsContainer = document.getElementById('ids-container');
-    const rawText = document.getElementById('raw-text');
-    const jsonOutput = document.getElementById('json-output');
-    const copyJsonBtn = document.getElementById('copy-json-btn');
-    const scaleIndicator = document.getElementById('scale-indicator');
+    const resetBtn = document.getElementById('reset-btn');
+    const progressBox = document.getElementById('progress-box');
+    const barFill = document.getElementById('bar-fill');
+    const progressMsg = document.getElementById('progress-msg');
+    const progressPct = document.getElementById('progress-pct');
+    const statusPill = document.getElementById('status-pill');
+    const resolutionLabel = document.getElementById('canvas-resolution');
 
-    let ocrWords = [];
+    // Outputs
+    const metricAmount = document.getElementById('metric-amount');
+    const metricWords = document.getElementById('metric-words');
+    const metricConf = document.getElementById('metric-conf');
+    const moneyChips = document.getElementById('money-chips');
+    const metaChips = document.getElementById('meta-chips');
+    const noiseChips = document.getElementById('noise-chips');
+    const auditList = document.getElementById('audit-list');
+    const rawView = document.getElementById('raw-view');
+    const jsonView = document.getElementById('json-view');
+    const copySummaryBtn = document.getElementById('copy-summary-btn');
+
     let naturalW = 0;
     let naturalH = 0;
+    let recognizedWords = [];
 
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
       });
     });
 
-    // File loading
+    // Ingest Image
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (event) => {
-        sourceImage.onload = () => {
-          naturalW = sourceImage.naturalWidth;
-          naturalH = sourceImage.naturalHeight;
-          sourceImage.style.display = 'block';
-          processBtn.disabled = false;
+      reader.onload = (evt) => {
+        sourceImg.onload = () => {
+          naturalW = sourceImg.naturalWidth;
+          naturalH = sourceImg.naturalHeight;
+          sourceImg.style.display = 'block';
+          runBtn.disabled = false;
           contrastBtn.disabled = false;
-          clearBtn.disabled = false;
+          resetBtn.disabled = false;
+          resolutionLabel.innerText = `${naturalW} × ${naturalH} px`;
+          statusPill.innerText = "Document Loaded";
+          statusPill.style.color = "#38bdf8";
           syncCanvas();
-          scaleIndicator.innerText = `${naturalW} × ${naturalH}px`;
         };
-        sourceImage.src = event.target.result;
+        sourceImg.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     });
@@ -216,77 +291,78 @@
     window.addEventListener('resize', syncCanvas);
 
     function syncCanvas() {
-      if (!sourceImage.src || sourceImage.style.display === 'none') return;
-      canvas.width = sourceImage.clientWidth;
-      canvas.height = sourceImage.clientHeight;
-      canvas.style.width = sourceImage.clientWidth + 'px';
-      canvas.style.height = sourceImage.clientHeight + 'px';
-      drawBoxes(ocrWords);
+      if (!sourceImg.src || sourceImg.style.display === 'none') return;
+      const rect = sourceImg.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      drawBoxes(recognizedWords);
     }
 
-    // Contrast Preprocessing in-browser
+    // Dynamic Image Preprocessing (Deskewing / Contrast enhancement)
     contrastBtn.addEventListener('click', () => {
-      const tempCanvas = document.createElement('canvas');
-      const tCtx = tempCanvas.getContext('2d');
-      tempCanvas.width = naturalW;
-      tempCanvas.height = naturalH;
-      tCtx.drawImage(sourceImage, 0, 0);
+      const tempCvs = document.createElement('canvas');
+      const tCtx = tempCvs.getContext('2d');
+      tempCvs.width = naturalW;
+      tempCvs.height = naturalH;
+      tCtx.drawImage(sourceImg, 0, 0);
 
       const imgData = tCtx.getImageData(0, 0, naturalW, naturalH);
       const d = imgData.data;
-      // High-contrast grayscale conversion
+
+      // Enhance text edges & remove paper gray haze
       for (let i = 0; i < d.length; i += 4) {
-        const v = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-        const factor = (259 * (128 + 50)) / (255 * (259 - 50)); // Contrast formula
-        const nv = Math.min(255, Math.max(0, factor * (v - 128) + 128));
-        d[i] = nv; d[i+1] = nv; d[i+2] = nv;
+        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        const highContrast = gray > 140 ? Math.min(255, gray * 1.15) : Math.max(0, gray * 0.7);
+        d[i] = highContrast; d[i+1] = highContrast; d[i+2] = highContrast;
       }
       tCtx.putImageData(imgData, 0, 0);
-      sourceImage.src = tempCanvas.toDataURL();
+      sourceImg.src = tempCvs.toDataURL();
+      statusPill.innerText = "Contrast Enhanced";
     });
 
-    // Run OCR
-    processBtn.addEventListener('click', async () => {
-      processBtn.disabled = true;
-      progressWrap.style.display = 'flex';
-      statusLabel.innerText = "Downloading OCR model...";
+    // Execute OCR
+    runBtn.addEventListener('click', async () => {
+      runBtn.disabled = true;
+      progressBox.style.display = 'flex';
+      statusPill.innerText = "Analyzing...";
 
       try {
         const worker = await Tesseract.createWorker('eng', 1, {
           logger: m => {
             if (m.status === 'recognizing text') {
               const p = Math.round((m.progress || 0) * 100);
-              progressFill.style.width = p + '%';
-              percentLabel.innerText = p + '%';
-              statusLabel.innerText = `Recognizing text (${p}%)...`;
-            } else {
-              statusLabel.innerText = m.status;
+              barFill.style.width = p + '%';
+              progressPct.innerText = p + '%';
+              progressMsg.innerText = `Reading text & spatial coordinates (${p}%)...`;
             }
           }
         });
 
-        const ret = await worker.recognize(sourceImage.src);
+        const res = await worker.recognize(sourceImg.src);
         await worker.terminate();
 
-        progressWrap.style.display = 'none';
-        processBtn.disabled = false;
+        progressBox.style.display = 'none';
+        runBtn.disabled = false;
+        statusPill.innerText = "Extraction Finished";
+        statusPill.style.color = "#10b981";
 
-        ocrWords = ret.data.words || [];
-        rawText.innerText = ret.data.text || "No text detected.";
-        
-        // Analyze entities with strict rules
-        analyzeEntities(ret.data.text, ocrWords);
+        recognizedWords = res.data.words || [];
+        rawView.innerText = res.data.text || "No text could be extracted.";
+
+        // Execute parsing engine
+        processDocumentIntelligence(res.data);
         syncCanvas();
-
       } catch (err) {
-        alert("OCR Execution error: " + err.message);
-        progressWrap.style.display = 'none';
-        processBtn.disabled = false;
+        alert("OCR Execution Error: " + err.message);
+        progressBox.style.display = 'none';
+        runBtn.disabled = false;
       }
     });
 
-    // Draw scale-accurate bounding boxes
-    function drawBoxes(words, highlightWord = null) {
+    // Spatial Bounding Box Engine
+    function drawBoxes(words, activeWord = null) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (!words || words.length === 0 || naturalW === 0) return;
 
@@ -294,120 +370,199 @@
       const scaleY = canvas.height / naturalH;
 
       words.forEach(w => {
+        // Disregard single garbage symbols
+        if (w.text.trim().length === 0) return;
+
         const { x0, y0, x1, y1 } = w.bbox;
         const boxX = x0 * scaleX;
         const boxY = y0 * scaleY;
         const boxW = (x1 - x0) * scaleX;
         const boxH = (y1 - y0) * scaleY;
 
-        const isTarget = highlightWord && w.text.toLowerCase().includes(highlightWord.toLowerCase());
+        const isMatch = activeWord && w.text.toLowerCase().includes(activeWord.toLowerCase());
 
-        ctx.strokeStyle = isTarget ? '#10b981' : 'rgba(56, 189, 248, 0.7)';
-        ctx.lineWidth = isTarget ? 3 : 1;
+        ctx.strokeStyle = isMatch ? '#10b981' : 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = isMatch ? 3 : 1;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-        if (isTarget) {
-          ctx.fillStyle = 'rgba(16, 185, 129, 0.35)';
+        if (isMatch) {
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.3)';
           ctx.fillRect(boxX, boxY, boxW, boxH);
         }
       });
     }
 
-    // Strict Entity Analysis
-    function analyzeEntities(text, words) {
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    // Document Intelligence Parser
+    function processDocumentIntelligence(data) {
+      const words = data.words || [];
+      const lines = (data.text || '').split('\n').map(l => l.trim()).filter(Boolean);
 
-      // 1. Rigorous Money/Currency regex:
-      // Must contain currency symbol (₹, Rs, Rs., INR, $, €) OR line starts with Total/Amount/Due
-      const moneyMatches = [];
-      const moneyRegex = /(?:₹|Rs\.?|INR|\$|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
-      
-      let m;
-      while ((m = moneyRegex.exec(text)) !== null) {
-        moneyMatches.push(m[0].trim());
-      }
+      // 1. Calculate Confidence & Word Metrics
+      const totalWords = words.length;
+      const avgConfidence = totalWords > 0 
+        ? Math.round(words.reduce((sum, w) => sum + (w.confidence || 0), 0) / totalWords) 
+        : 0;
+      metricWords.innerText = totalWords;
+      metricConf.innerText = avgConfidence + '%';
 
-      // Check context keywords for lines like "Total: 450.00" where symbol was omitted
-      const totalLineRegex = /(?:total|subtotal|amount due|balance|net pay|grand total)[\s:]+([0-9,]+\.[0-9]{2})/gi;
-      while ((m = totalLineRegex.exec(text)) !== null) {
-        if (!moneyMatches.some(entry => entry.includes(m[1]))) {
-          moneyMatches.push("₹ " + m[1].trim());
+      // 2. Separate Mobile System Noise (Top 5% & Bottom 5% in mobile-aspect ratio)
+      const isMobileRatio = (naturalH / naturalW) > 1.6;
+      const noiseWords = [];
+      const documentBodyLines = [];
+
+      lines.forEach(line => {
+        // Find if line corresponds to mobile status bar (time, battery %, Vi, 5G)
+        const isStatusBar = /^(?:[0-2]?[0-9]:[0-5][0-9]|(?:lte|4g|5g|vowifi|volte)|\d{1,3}%)/i.test(line);
+        if (isStatusBar && isMobileRatio) {
+          noiseWords.push(line);
+        } else {
+          documentBodyLines.push(line);
         }
-      }
+      });
 
-      // 2. Dates
+      // 3. Robust Financial / Currency Filter
+      // We look for currency symbols (₹, Rs, INR, $, €), or lines starting with Total/Amount Due/Paid
+      const verifiedAmounts = [];
+      const moneyPattern = /(?:₹|rs\.?|inr|\$|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
+      const fallbackTotalPattern = /(?:grand\s*total|total\s*amount|amount\s*paid|subtotal|balance|due)\s*[:=\-]?\s*(?:₹|rs\.?)?\s*([0-9,]+\.[0-9]{2}|[0-9,]+)/i;
+
+      documentBodyLines.forEach(line => {
+        let m;
+        // Direct currency marker match
+        while ((m = moneyPattern.exec(line)) !== null) {
+          const cleanVal = m[0].replace(/\s+/g, ' ');
+          if (!verifiedAmounts.includes(cleanVal)) verifiedAmounts.push(cleanVal);
+        }
+
+        // Context keyword match
+        const totalMatch = line.match(fallbackTotalPattern);
+        if (totalMatch && totalMatch[1]) {
+          const candidate = "₹ " + totalMatch[1].replace(/,/g, '');
+          if (!verifiedAmounts.some(v => v.includes(totalMatch[1]))) {
+            verifiedAmounts.push(candidate);
+          }
+        }
+      });
+
+      // Determine highest amount for executive metric
+      let maxNumeric = 0;
+      verifiedAmounts.forEach(amt => {
+        const numeric = parseFloat(amt.replace(/[^0-9.]/g, ''));
+        if (numeric && numeric > maxNumeric) maxNumeric = numeric;
+      });
+      metricAmount.innerText = maxNumeric > 0 ? `₹${maxNumeric.toLocaleString()}` : '₹0.00';
+
+      // 4. Extract Dates & Identifiers
       const dateRegex = /\b([0-3]?[0-9][\/\-\.][0-1]?[0-9][\/\-\.](?:20|19)?[0-9]{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+[0-9]{1,2},?\s+[0-9]{4})\b/gi;
-      const dateMatches = [...new Set(text.match(dateRegex) || [])];
+      const detectedDates = [...new Set((data.text || '').match(dateRegex) || [])];
 
-      // 3. Document / Invoice IDs
-      const idRegex = /(?:inv(?:oice)?|bill|order|ref|receipt)[\s#.:-]*([a-z0-9\-\/]{4,16})/gi;
-      const idMatches = [];
-      while ((m = idRegex.exec(text)) !== null) {
-        idMatches.push(m[0].trim());
+      const idRegex = /(?:inv(?:oice)?|bill|order|tx|ref|gstin|receipt)[\s#.:-]*([a-z0-9\-\/]{4,18})/gi;
+      const detectedIds = [];
+      let idM;
+      while ((idM = idRegex.exec(data.text)) !== null) {
+        if (!detectedIds.includes(idM[0])) detectedIds.push(idM[0]);
       }
 
-      // Render tags
-      renderTags(amountsContainer, moneyMatches, 'tag-money', 'No confirmed currency amounts.');
-      renderTags(datesContainer, dateMatches, 'tag-date', 'No dates detected.');
-      renderTags(idsContainer, idMatches, 'tag-id', 'No invoice/order IDs detected.');
+      // 5. Render Chips
+      renderChipGroup(moneyChips, verifiedAmounts, 'chip-money', 'No confirmed currency amounts.');
+      renderChipGroup(metaChips, [...detectedDates, ...detectedIds], 'chip-date', 'No dates or invoice references found.');
+      renderChipGroup(noiseChips, noiseWords, 'chip-noise', 'Clean document. No mobile notification noise detected.');
 
-      // Structured JSON Output
-      const payload = {
+      // 6. Build Explanatory Narrative
+      let narrativeHtml = '';
+      if (verifiedAmounts.length > 0) {
+        narrativeHtml += `
+          <div class="audit-card">
+            <div class="audit-title">Financial Transaction Detected</div>
+            <div class="audit-desc">This document includes valid financial commitments totaling up to <strong>₹${maxNumeric.toLocaleString()}</strong>. Anchored across ${verifiedAmounts.length} line items.</div>
+          </div>
+        `;
+      }
+      if (detectedDates.length > 0) {
+        narrativeHtml += `
+          <div class="audit-card">
+            <div class="audit-title">Temporal Timestamp</div>
+            <div class="audit-desc">Transaction recorded on <strong>${detectedDates.join(', ')}</strong>.</div>
+          </div>
+        `;
+      }
+      if (noiseWords.length > 0) {
+        narrativeHtml += `
+          <div class="audit-card" style="border-left-color: var(--rose);">
+            <div class="audit-title">System Noise Isolated</div>
+            <div class="audit-desc">Filtered out ${noiseWords.length} top-screen mobile status indicators (${noiseWords.join(', ')}) to keep parsed records clean.</div>
+          </div>
+        `;
+      }
+      auditList.innerHTML = narrativeHtml || '<p style="color: var(--text-muted);">Standard document detected. No special ledger items found.</p>';
+
+      // 7. Update JSON output
+      const jsonPayload = {
+        scan_audit: {
+          confidence_percentage: avgConfidence,
+          word_count: totalWords,
+          resolution: `${naturalW}x${naturalH}`
+        },
+        financials: {
+          primary_total: maxNumeric,
+          verified_currency_tokens: verifiedAmounts
+        },
         metadata: {
-          timestamp: new Date().toISOString(),
-          resolution: `${naturalW}x${naturalH}`,
-          wordCount: words.length
+          timestamps: detectedDates,
+          identifiers: detectedIds
         },
-        entities: {
-          amounts: moneyMatches,
-          dates: dateMatches,
-          identifiers: idMatches
-        },
-        lines: lines
+        isolated_noise: noiseWords
       };
-      jsonOutput.innerText = JSON.stringify(payload, null, 2);
+      jsonView.innerText = JSON.stringify(jsonPayload, null, 2);
     }
 
-    function renderTags(container, list, cssClass, fallback) {
+    function renderChipGroup(container, items, chipClass, fallback) {
       container.innerHTML = '';
-      if (!list || list.length === 0) {
-        container.innerHTML = `<span style="color: #64748b; font-size: 0.85rem;">${fallback}</span>`;
+      if (!items || items.length === 0) {
+        container.innerHTML = `<span style="color: #4b5563; font-size: 0.8rem;">${fallback}</span>`;
         return;
       }
-      list.forEach(item => {
-        const span = document.createElement('span');
-        span.className = `entity-tag ${cssClass}`;
-        span.innerText = item;
-        span.title = "Click to flash bounding box";
-        span.onclick = () => {
-          // Extract core digits or word to highlight
-          const cleanItem = item.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(' ')[0];
-          drawBoxes(ocrWords, cleanItem);
+      items.forEach(text => {
+        const chip = document.createElement('span');
+        chip.className = `chip ${chipClass}`;
+        chip.innerText = text;
+        chip.title = "Click to locate in document";
+        chip.onclick = () => {
+          const searchToken = text.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(' ')[0];
+          drawBoxes(recognizedWords, searchToken);
         };
-        container.appendChild(span);
+        container.appendChild(chip);
       });
     }
 
-    copyJsonBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(jsonOutput.innerText);
-      copyJsonBtn.innerText = "Copied!";
-      setTimeout(() => copyJsonBtn.innerText = "Copy JSON", 1500);
+    // Copy JSON / Narrative Report
+    copySummaryBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(jsonView.innerText);
+      copySummaryBtn.innerText = "Copied!";
+      setTimeout(() => copySummaryBtn.innerText = "Copy Report", 1500);
     });
 
-    clearBtn.addEventListener('click', () => {
-      sourceImage.src = '';
-      sourceImage.style.display = 'none';
+    // Reset All
+    resetBtn.addEventListener('click', () => {
+      sourceImg.src = '';
+      sourceImg.style.display = 'none';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      rawText.innerText = 'Awaiting document analysis...';
-      jsonOutput.innerText = '{}';
-      amountsContainer.innerHTML = '<span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>';
-      datesContainer.innerHTML = '<span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>';
-      idsContainer.innerHTML = '<span style="color: #64748b; font-size: 0.85rem;">None detected yet.</span>';
-      processBtn.disabled = true;
+      rawView.innerText = '';
+      jsonView.innerText = '{}';
+      metricAmount.innerText = '₹0.00';
+      metricWords.innerText = '0';
+      metricConf.innerText = '0%';
+      moneyChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">Awaiting analysis...</span>';
+      metaChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">Awaiting analysis...</span>';
+      noiseChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">No mobile UI artifacts isolated.</span>';
+      auditList.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Upload a document or mobile screenshot to view an explanatory narrative of all detected transactions.</p>';
+      runBtn.disabled = true;
       contrastBtn.disabled = true;
-      clearBtn.disabled = true;
+      resetBtn.disabled = true;
       fileInput.value = '';
-      scaleIndicator.innerText = 'Ready';
+      resolutionLabel.innerText = 'No File';
+      statusPill.innerText = 'System Ready';
+      statusPill.style.color = '#9ca3af';
     });
   </script>
 </body>

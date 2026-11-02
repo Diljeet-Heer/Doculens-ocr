@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DocuLens AI Pro - Document Intelligence & OCR</title>
+  <title>DocuLens AI Pro - Precision Document Intelligence</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
@@ -12,52 +12,45 @@
       --surface-elevated: #162036;
       --border: #1e293b;
       --primary: #38bdf8;
-      --primary-dim: rgba(56, 189, 248, 0.15);
       --emerald: #10b981;
       --amber: #f59e0b;
-      --rose: #f43f5e;
       --text: #f8fafc;
-      --text-muted: #94a3b8;
+      --text-muted: #94a3af;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; }
 
-    /* Top Navigation */
     .header-bar {
-      width: 100%; max-width: 1400px; display: flex; justify-content: space-between; align-items: center;
+      width: 100%; max-width: 1350px; display: flex; justify-content: space-between; align-items: center;
       padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
     }
     .brand-group { display: flex; align-items: center; gap: 0.75rem; }
     .brand-icon { font-size: 1.75rem; }
-    .brand-title { font-size: 1.4rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    .brand-title { font-size: 1.35rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
     .badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 9999px; background: var(--surface-elevated); color: var(--primary); border: 1px solid var(--border); }
 
-    /* Desktop Balanced Grid */
-    .workspace {
-      width: 100%; max-width: 1400px; display: grid; grid-template-columns: 1fr; gap: 1.5rem;
-    }
+    .workspace { width: 100%; max-width: 1350px; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
     @media (min-width: 1024px) {
-      .workspace { grid-template-columns: 1.1fr 1fr; align-items: start; }
+      .workspace { grid-template-columns: 1.15fr 0.85fr; align-items: start; }
     }
 
     .panel {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.35rem; display: flex; flex-direction: column; gap: 1.1rem;
+      padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
     }
 
-    /* Left Panel: Ingestion & Canvas */
     .dropzone {
-      border: 2px dashed #334155; border-radius: 12px; padding: 2rem 1rem; text-align: center;
+      border: 2px dashed #334155; border-radius: 12px; padding: 1.75rem 1rem; text-align: center;
       cursor: pointer; transition: all 0.2s ease; position: relative; background: rgba(15, 23, 42, 0.4);
     }
-    .dropzone:hover { border-color: var(--primary); background: var(--primary-dim); }
+    .dropzone:hover { border-color: var(--primary); }
     .dropzone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-    .action-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .btn {
       background: var(--primary); color: #000; font-weight: 600; border: none; border-radius: 8px;
-      padding: 0.65rem 1.2rem; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+      padding: 0.65rem 1.15rem; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
       display: inline-flex; align-items: center; gap: 0.4rem;
     }
     .btn:hover { opacity: 0.9; }
@@ -65,14 +58,13 @@
     .btn-secondary { background: var(--surface-elevated); color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { background: #1e293b; }
 
-    /* Canvas Viewport */
-    .preview-stage {
-      position: relative; width: 100%; min-height: 320px; max-height: 580px; background: #030712;
-      border-radius: 10px; overflow: hidden; display: flex; justify-content: center; align-items: center;
-      border: 1px solid var(--border);
+    /* Unified Canvas Workspace */
+    .canvas-stage {
+      width: 100%; min-height: 280px; max-height: 600px; background: #030712;
+      border-radius: 10px; overflow: auto; display: flex; justify-content: center; align-items: center;
+      border: 1px solid var(--border); position: relative;
     }
-    #doc-image { max-width: 100%; max-height: 580px; object-fit: contain; display: block; }
-    #box-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+    #main-canvas { display: block; max-width: 100%; height: auto; object-fit: contain; }
 
     /* Progress Notification */
     .progress-bar-wrap { display: none; flex-direction: column; gap: 0.4rem; }
@@ -80,12 +72,12 @@
     .progress-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.15s; }
     .progress-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
 
-    /* Right Panel: Executive Intelligence Dossier */
+    /* Executive Dossier */
     .essentials-card {
       background: var(--surface-elevated); border: 1px solid #293548; border-radius: 10px;
       padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.75rem;
     }
-    .essentials-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
+    .essentials-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
     
     .essentials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; }
     .essential-item { display: flex; flex-direction: column; gap: 0.2rem; }
@@ -93,10 +85,9 @@
     .essential-value { font-size: 1.05rem; font-weight: 700; color: #fff; word-break: break-word; }
     .essential-value.highlight-green { color: var(--emerald); }
 
-    /* Chips container */
     .tag-section { display: flex; flex-direction: column; gap: 0.35rem; }
     .tag-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .tag-cluster { display: flex; gap: 0.4rem; flex-wrap: wrap; min-height: 28px; }
+    .tag-cluster { display: flex; gap: 0.4rem; flex-wrap: wrap; min-height: 24px; }
     .chip {
       padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
       display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; transition: transform 0.1s;
@@ -105,9 +96,7 @@
     .chip-money { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     .chip-date { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .chip-id { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
-    .chip-noise { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.35); font-size: 0.75rem; }
 
-    /* Tabs */
     .tab-bar { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
     .tab-btn { background: none; border: none; color: var(--text-muted); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
     .tab-btn.active { background: var(--surface-elevated); color: var(--primary); }
@@ -123,111 +112,99 @@
     <div class="brand-group">
       <span class="brand-icon">📑</span>
       <span class="brand-title">DocuLens AI Pro</span>
-      <span class="badge">v3.0 Multi-Orientation</span>
+      <span class="badge">v4.0 Precision Engine</span>
     </div>
     <div id="engine-status" class="badge" style="color: var(--text-muted);">Ready</div>
   </header>
 
   <main class="workspace">
-    <!-- LEFT COLUMN: Canvas, Image Loading, & Controls -->
+    <!-- LEFT PANEL: Image Ingestion & Unified High-DPI Canvas -->
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 600; font-size: 1rem;">Document Stage</span>
+        <span style="font-weight: 600; font-size: 0.95rem;">Document Stage</span>
         <span id="res-badge" style="font-size: 0.75rem; color: var(--text-muted);">No File</span>
       </div>
 
       <div class="dropzone" id="dropzone">
         <input type="file" id="file-selector" accept="image/*" />
-        <div style="font-size: 2.2rem; margin-bottom: 0.3rem;">📄</div>
-        <p style="font-weight: 600;">Drop receipt, bill, or rotated invoice</p>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Auto-straightens, filters barcode/noise, and parses key data</p>
+        <div style="font-size: 2rem; margin-bottom: 0.3rem;">📄</div>
+        <p style="font-weight: 600;">Upload document or receipt</p>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">PNG, JPG, or WebP</p>
       </div>
 
       <div class="action-row">
-        <button id="extract-btn" class="btn" disabled>🚀 Analyze Document</button>
+        <button id="extract-btn" class="btn" disabled>🚀 Run OCR</button>
+        <button id="bw-btn" class="btn btn-secondary" disabled>⚡ Enhance Contrast (B&W)</button>
         <button id="rotate-btn" class="btn btn-secondary" disabled>🔄 Rotate 90°</button>
-        <button id="clear-btn" class="btn btn-secondary" disabled>Reset</button>
+        <button id="reset-btn" class="btn btn-secondary" disabled>Reset</button>
       </div>
 
       <div class="progress-bar-wrap" id="progress-wrap">
         <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
         <div class="progress-info">
-          <span id="progress-label">Preparing OCR neural nets...</span>
+          <span id="progress-label">Preparing OCR engine...</span>
           <span id="progress-percent">0%</span>
         </div>
       </div>
 
-      <div class="preview-stage" id="stage">
-        <img id="doc-image" style="display:none;" />
-        <canvas id="box-canvas"></canvas>
+      <div class="canvas-stage" id="stage">
+        <canvas id="main-canvas"></canvas>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Executive Dossier & Structured Outputs -->
+    <!-- RIGHT PANEL: Precision Intelligence & Explanatory Output -->
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 600; font-size: 1rem;">Document Intelligence</span>
+        <span style="font-weight: 600; font-size: 0.95rem;">Extracted Intelligence</span>
         <button id="copy-btn" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">Copy JSON</button>
       </div>
 
-      <!-- PINNED ESSENTIALS: Always visible at a glance -->
+      <!-- KEY ESSENTIALS: Only shown if factually detected -->
       <div class="essentials-card">
         <div class="essentials-title">
-          <span>Key Document Essentials</span>
-          <span id="doc-type-badge" style="color: var(--amber); font-size: 0.75rem;">Unknown Type</span>
+          <span>Key Verified Essentials</span>
+          <span id="doc-type-badge" style="display: none; color: var(--amber); font-size: 0.75rem; border: 1px solid var(--amber); padding: 0.15rem 0.5rem; border-radius: 4px;"></span>
         </div>
         <div class="essentials-grid">
           <div class="essential-item">
-            <span class="essential-label">Primary Amount</span>
-            <span class="essential-value highlight-green" id="ess-amount">₹0.00</span>
+            <span class="essential-label">Verified Total</span>
+            <span class="essential-value" id="ess-amount">Not Mentioned</span>
           </div>
           <div class="essential-item">
-            <span class="essential-label">Date Detected</span>
-            <span class="essential-value" id="ess-date">--</span>
+            <span class="essential-label">Date Identified</span>
+            <span class="essential-value" id="ess-date">Not Mentioned</span>
           </div>
           <div class="essential-item">
-            <span class="essential-label">Invoice / Ref</span>
-            <span class="essential-value" id="ess-ref">--</span>
+            <span class="essential-label">Invoice / Ref No.</span>
+            <span class="essential-value" id="ess-ref">Not Mentioned</span>
           </div>
           <div class="essential-item">
-            <span class="essential-label">Word Accuracy</span>
+            <span class="essential-label">Confidence</span>
             <span class="essential-value" id="ess-conf">--%</span>
           </div>
         </div>
       </div>
 
-      <!-- VERIFIED AMOUNTS -->
-      <div class="tag-section">
-        <div class="tag-title">Verified Amounts (Rupees & Currencies)</div>
-        <div class="tag-cluster" id="amounts-chips">
-          <span style="color: #4b5563; font-size: 0.8rem;">Waiting for document...</span>
-        </div>
+      <!-- VERIFIED AMOUNTS: Only appears if valid money exists -->
+      <div class="tag-section" id="money-section" style="display: none;">
+        <div class="tag-title">Verified Currency Figures</div>
+        <div class="tag-cluster" id="amounts-chips"></div>
       </div>
 
-      <!-- DATES & IDENTIFIERS -->
-      <div class="tag-section">
-        <div class="tag-title">Metadata & Reference Numbers</div>
-        <div class="tag-cluster" id="meta-chips">
-          <span style="color: #4b5563; font-size: 0.8rem;">Waiting for document...</span>
-        </div>
+      <!-- METADATA & REFS -->
+      <div class="tag-section" id="meta-section" style="display: none;">
+        <div class="tag-title">Verified References & Dates</div>
+        <div class="tag-cluster" id="meta-chips"></div>
       </div>
 
-      <!-- NOISE & BARCODE/QR SUPPRESSION -->
-      <div class="tag-section">
-        <div class="tag-title">Suppressed Clutter (Barcodes / QR / Mobile UI)</div>
-        <div class="tag-cluster" id="noise-chips">
-          <span style="color: #4b5563; font-size: 0.8rem;">No barcodes or mobile UI noise isolated.</span>
-        </div>
-      </div>
-
-      <!-- TAB SECTIONS -->
+      <!-- TABS -->
       <div class="tab-bar">
-        <button class="tab-btn active" data-tab="tab-structured">Clean Lines</button>
-        <button class="tab-btn" data-tab="tab-json">JSON Output</button>
+        <button class="tab-btn active" data-tab="tab-structured">Meaningful Text Lines</button>
+        <button class="tab-btn" data-tab="tab-json">JSON Schema</button>
       </div>
 
       <div id="tab-structured" class="tab-content active">
-        <div id="structured-text" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;"></div>
+        <div id="structured-text" style="white-space: pre-wrap; font-family: monospace; color: #cbd5e1;">Awaiting document analysis...</div>
       </div>
 
       <div id="tab-json" class="tab-content">
@@ -238,12 +215,12 @@
 
   <script>
     const fileSelector = document.getElementById('file-selector');
-    const docImage = document.getElementById('doc-image');
-    const canvas = document.getElementById('box-canvas');
+    const canvas = document.getElementById('main-canvas');
     const ctx = canvas.getContext('2d');
     const extractBtn = document.getElementById('extract-btn');
+    const bwBtn = document.getElementById('bw-btn');
     const rotateBtn = document.getElementById('rotate-btn');
-    const clearBtn = document.getElementById('clear-btn');
+    const resetBtn = document.getElementById('reset-btn');
     const progressWrap = document.getElementById('progress-wrap');
     const progressFill = document.getElementById('progress-fill');
     const progressLabel = document.getElementById('progress-label');
@@ -251,24 +228,24 @@
     const engineStatus = document.getElementById('engine-status');
     const resBadge = document.getElementById('res-badge');
 
-    // Key Essentials Elements
+    // Essentials
     const essAmount = document.getElementById('ess-amount');
     const essDate = document.getElementById('ess-date');
     const essRef = document.getElementById('ess-ref');
     const essConf = document.getElementById('ess-conf');
     const docTypeBadge = document.getElementById('doc-type-badge');
 
-    // Chips & Content
+    // Dynamic Sections
+    const moneySection = document.getElementById('money-section');
+    const metaSection = document.getElementById('meta-section');
     const amountsChips = document.getElementById('amounts-chips');
     const metaChips = document.getElementById('meta-chips');
-    const noiseChips = document.getElementById('noise-chips');
     const structuredText = document.getElementById('structured-text');
     const jsonCode = document.getElementById('json-code');
     const copyBtn = document.getElementById('copy-btn');
 
-    let naturalW = 0;
-    let naturalH = 0;
-    let currentRotation = 0;
+    let rawImg = new Image();
+    let currentImgData = null;
     let ocrWords = [];
 
     // Tabs
@@ -281,64 +258,83 @@
       });
     });
 
-    // Ingest Image
+    // Ingest Image & Draw Directly to Native Canvas
     fileSelector.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        docImage.onload = () => {
-          naturalW = docImage.naturalWidth;
-          naturalH = docImage.naturalHeight;
-          currentRotation = 0;
-          docImage.style.display = 'block';
+        rawImg = new Image();
+        rawImg.onload = () => {
+          canvas.width = rawImg.naturalWidth;
+          canvas.height = rawImg.naturalHeight;
+          ctx.drawImage(rawImg, 0, 0);
+          currentImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
           extractBtn.disabled = false;
+          bwBtn.disabled = false;
           rotateBtn.disabled = false;
-          clearBtn.disabled = false;
-          resBadge.innerText = `${naturalW} × ${naturalH} px`;
+          resetBtn.disabled = false;
+          resBadge.innerText = `${canvas.width} × ${canvas.height} px`;
           engineStatus.innerText = "Loaded";
           engineStatus.style.color = "#38bdf8";
-          syncCanvas();
         };
-        docImage.src = evt.target.result;
+        rawImg.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     });
 
-    window.addEventListener('resize', syncCanvas);
+    // Dynamic B&W Thresholding & Edge Contrast (Otsu-style)
+    bwBtn.addEventListener('click', () => {
+      if (!currentImgData) return;
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imgData.data;
 
-    function syncCanvas() {
-      if (!docImage.src || docImage.style.display === 'none') return;
-      const rect = docImage.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-      drawBoxes(ocrWords);
-    }
+      // 1. Calculate Average Luminance
+      let totalLuminance = 0;
+      const totalPixels = canvas.width * canvas.height;
+      for (let i = 0; i < d.length; i += 4) {
+        totalLuminance += (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]);
+      }
+      const avgLuminance = totalLuminance / totalPixels;
+      // Set dynamic threshold slightly below mean to clean gray background without losing strokes
+      const threshold = Math.max(90, Math.min(160, avgLuminance * 0.9));
 
-    // Rotate Image by 90 degrees
+      // 2. High-Contrast Binarization
+      for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        const val = lum > threshold ? 255 : 0;
+        d[i] = val;
+        d[i+1] = val;
+        d[i+2] = val;
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      currentImgData = imgData;
+      engineStatus.innerText = "B&W Enhanced";
+      engineStatus.style.color = "var(--emerald)";
+    });
+
+    // Rotate 90 Degrees Matrix
     rotateBtn.addEventListener('click', () => {
-      currentRotation = (currentRotation + 90) % 360;
       const tempCvs = document.createElement('canvas');
       const tCtx = tempCvs.getContext('2d');
-
-      if (currentRotation % 180 !== 0) {
-        tempCvs.width = naturalH;
-        tempCvs.height = naturalW;
-      } else {
-        tempCvs.width = naturalW;
-        tempCvs.height = naturalH;
-      }
+      tempCvs.width = canvas.height;
+      tempCvs.height = canvas.width;
 
       tCtx.translate(tempCvs.width / 2, tempCvs.height / 2);
       tCtx.rotate((90 * Math.PI) / 180);
-      tCtx.drawImage(docImage, -docImage.naturalWidth / 2, -docImage.naturalHeight / 2);
+      tCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
 
-      docImage.src = tempCvs.toDataURL();
+      canvas.width = tempCvs.width;
+      canvas.height = tempCvs.height;
+      ctx.drawImage(tempCvs, 0, 0);
+      currentImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      resBadge.innerText = `${canvas.width} × ${canvas.height} px`;
+      drawBoxes(ocrWords);
     });
 
-    // Run OCR with Garbage Filtering & Auto-Orientation Checks
+    // Run OCR
     extractBtn.addEventListener('click', async () => {
       extractBtn.disabled = true;
       progressWrap.style.display = 'flex';
@@ -351,17 +347,12 @@
               const p = Math.round((m.progress || 0) * 100);
               progressFill.style.width = p + '%';
               progressPercent.innerText = p + '%';
-              progressLabel.innerText = `Recognizing text and structure (${p}%)...`;
+              progressLabel.innerText = `Analyzing document geometry (${p}%)...`;
             }
           }
         });
 
-        // Set parameters to avoid producing solitary non-alphanumeric junk
-        await worker.setParameters({
-          tessedit_char_blacklist: '§±¶×÷¬¥¢£©®™'
-        });
-
-        const res = await worker.recognize(docImage.src);
+        const res = await worker.recognize(canvas.toDataURL());
         await worker.terminate();
 
         progressWrap.style.display = 'none';
@@ -371,187 +362,182 @@
 
         ocrWords = res.data.words || [];
         processDocumentIntelligence(res.data);
-        syncCanvas();
       } catch (err) {
-        alert("OCR Execution Error: " + err.message);
+        alert("OCR Error: " + err.message);
         progressWrap.style.display = 'none';
         extractBtn.disabled = false;
       }
     });
 
-    // Box Renderer with Interactive Focus
+    // 100% Accurate Canvas Highlighting (Direct In-Memory Coordinates)
     function drawBoxes(words, activeWord = null) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (!words || words.length === 0 || naturalW === 0) return;
+      if (!currentImgData) return;
+      ctx.putImageData(currentImgData, 0, 0); // Clear to clean image state
 
-      const scaleX = canvas.width / naturalW;
-      const scaleY = canvas.height / naturalH;
+      if (!words || words.length === 0) return;
 
       words.forEach(w => {
-        if (!w.text || isBarcodeOrGarbage(w.text)) return;
+        if (!w.text || !isLegibleToken(w.text)) return;
 
         const { x0, y0, x1, y1 } = w.bbox;
-        const boxX = x0 * scaleX;
-        const boxY = y0 * scaleY;
-        const boxW = (x1 - x0) * scaleX;
-        const boxH = (y1 - y0) * scaleY;
+        const wBox = x1 - x0;
+        const hBox = y1 - y0;
 
         const isMatch = activeWord && w.text.toLowerCase().includes(activeWord.toLowerCase());
 
-        ctx.strokeStyle = isMatch ? '#10b981' : 'rgba(56, 189, 248, 0.35)';
-        ctx.lineWidth = isMatch ? 3 : 1;
-        ctx.strokeRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = isMatch ? '#10b981' : 'rgba(56, 189, 248, 0.45)';
+        ctx.lineWidth = isMatch ? 3 : 1.5;
+        ctx.strokeRect(x0, y0, wBox, hBox);
 
         if (isMatch) {
           ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-          ctx.fillRect(boxX, boxY, boxW, boxH);
+          ctx.fillRect(x0, y0, wBox, hBox);
         }
       });
     }
 
-    // Detect barcode, QR garbage, or untypable gibberish tokens
-    function isBarcodeOrGarbage(str) {
+    // Token Validator: Filters out single-character hallucinations & garbage
+    function isLegibleToken(str) {
       const clean = str.trim();
-      if (clean.length === 0) return true;
-      // Repeating identical punctuation or symbols (e.g. ||||, ////, ----)
-      if (/^([|\/\\_\-.,:;=~#*^!@$%&()\[\]{}])\1{2,}$/.test(clean)) return true;
-      // Long strings without any vowels that aren't valid known acronyms
-      if (clean.length > 7 && !/[aeiouyAEIOUY0-9]/i.test(clean)) return true;
-      return false;
+      if (clean.length === 0) return false;
+      if (clean.length === 1 && !/[0-9a-zA-Z]/.test(clean)) return false;
+      // Repetitive symbols
+      if (/^([|\/\\_\-.,:;=~#*^!@$%&()\[\]{}])\1+$/.test(clean)) return false;
+      // Long vowel-less gibberish
+      if (clean.length > 7 && !/[aeiouyAEIOUY0-9]/i.test(clean)) return false;
+      return true;
     }
 
-    // Core Analysis & Executive Dossier Construction
+    // Intelligence & Zero-Guess Logic
     function processDocumentIntelligence(data) {
-      const words = (data.words || []).filter(w => !isBarcodeOrGarbage(w.text));
+      const words = (data.words || []).filter(w => isLegibleToken(w.text));
       const rawLines = (data.text || '').split('\n').map(l => l.trim()).filter(Boolean);
 
-      // Clean lines: remove stray non-ASCII and suppress barcode blocks
+      // Clean lines to readable words & short-forms
       const cleanLines = [];
-      const noiseLines = [];
-
-      const isMobileRatio = (naturalH / naturalW) > 1.6;
-
-      rawLines.forEach(line => {
-        // Strip non-printable chars
-        const sanitized = line.replace(/[^\x20-\x7E\u20B9]/g, '').trim();
-        if (!sanitized || isBarcodeOrGarbage(sanitized)) {
-          noiseLines.push(line);
-          return;
-        }
-
-        // Detect mobile status bar (time, battery %, Vi, 5G)
-        const isStatusBar = /^(?:[0-2]?[0-9]:[0-5][0-9]|(?:lte|4g|5g|vowifi|volte)|\d{1,3}%)/i.test(sanitized);
-        if (isStatusBar && isMobileRatio) {
-          noiseLines.push(sanitized);
-        } else {
-          cleanLines.push(sanitized);
+      rawLines.forEach(l => {
+        const lineTokens = l.split(/\s+/).filter(isLegibleToken);
+        if (lineTokens.length > 0) {
+          cleanLines.push(lineTokens.join(' '));
         }
       });
 
-      // 1. Accuracy
-      const avgConf = words.length > 0 
-        ? Math.round(words.reduce((sum, w) => sum + (w.confidence || 0), 0) / words.length) 
+      // 1. Overall Confidence
+      const avgConf = words.length > 0
+        ? Math.round(words.reduce((sum, w) => sum + (w.confidence || 0), 0) / words.length)
         : 0;
       essConf.innerText = avgConf + '%';
 
-      // 2. Financial Amount Extraction (Anchored to ₹, Rs, INR, $, Total)
-      const verifiedAmounts = [];
-      const moneyPattern = /(?:₹|rs\.?|inr|\$|eur|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
-      const totalKeywordPattern = /(?:grand\s*total|total\s*amount|amount\s*paid|subtotal|balance|due|net\s*pay)[\s:=]+(?:₹|rs\.?)?\s*([0-9,]+\.[0-9]{2}|[0-9,]+)/i;
+      // 2. Strict Document Classification (100% Sure - No Guessing)
+      const fullTextUpper = cleanLines.join(' ').toUpperCase();
+      const verifiedTypes = [
+        "TAX INVOICE", "INVOICE", "CASH RECEIPT", "RECEIPT",
+        "BILL OF SUPPLY", "UTILITY BILL", "ADMISSION TICKET",
+        "PRESCRIPTION", "PURCHASE ORDER"
+      ];
 
-      cleanLines.forEach(l => {
-        let m;
-        while ((m = moneyPattern.exec(l)) !== null) {
-          const formatted = m[0].replace(/\s+/g, ' ');
-          if (!verifiedAmounts.includes(formatted)) verifiedAmounts.push(formatted);
+      let detectedType = null;
+      for (const t of verifiedTypes) {
+        if (fullTextUpper.includes(t)) {
+          detectedType = t;
+          break;
         }
-        const totalMatch = l.match(totalKeywordPattern);
-        if (totalMatch && totalMatch[1]) {
-          const candidate = "₹ " + totalMatch[1].replace(/,/g, '');
-          if (!verifiedAmounts.some(v => v.includes(totalMatch[1]))) {
+      }
+
+      if (detectedType) {
+        docTypeBadge.innerText = detectedType;
+        docTypeBadge.style.display = 'inline-block';
+      } else {
+        docTypeBadge.style.display = 'none';
+      }
+
+      // 3. Strict Financial Extraction (No Assumptions)
+      const verifiedAmounts = [];
+      const explicitCurrencyRegex = /(?:₹|rs\.?|inr|\$|eur|€)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/gi;
+      const totalContextRegex = /(?:grand\s*total|total\s*amount|amount\s*paid|subtotal|balance\s*due|net\s*payable)[\s:=]+(?:₹|rs\.?)?\s*([0-9,]+\.[0-9]{2}|[0-9,]+)/i;
+
+      cleanLines.forEach(line => {
+        let m;
+        while ((m = explicitCurrencyRegex.exec(line)) !== null) {
+          const val = m[0].replace(/\s+/g, ' ');
+          if (!verifiedAmounts.includes(val)) verifiedAmounts.push(val);
+        }
+        const ctxMatch = line.match(totalContextRegex);
+        if (ctxMatch && ctxMatch[1]) {
+          const candidate = "₹ " + ctxMatch[1].replace(/,/g, '');
+          if (!verifiedAmounts.some(v => v.includes(ctxMatch[1]))) {
             verifiedAmounts.push(candidate);
           }
         }
       });
 
-      // Compute Primary Total
-      let maxTotal = 0;
-      verifiedAmounts.forEach(amt => {
-        const num = parseFloat(amt.replace(/[^0-9.]/g, ''));
-        if (num && num > maxTotal) maxTotal = num;
-      });
-      essAmount.innerText = maxTotal > 0 ? `₹${maxTotal.toLocaleString()}` : 'None';
+      // Show/Hide Financial Dashboard Elements
+      if (verifiedAmounts.length > 0) {
+        let maxTotal = 0;
+        verifiedAmounts.forEach(amt => {
+          const num = parseFloat(amt.replace(/[^0-9.]/g, ''));
+          if (num && num > maxTotal) maxTotal = num;
+        });
+        essAmount.innerText = `₹${maxTotal.toLocaleString()}`;
+        essAmount.className = 'essential-value highlight-green';
 
-      // 3. Date Detection
+        moneySection.style.display = 'flex';
+        renderChipGroup(amountsChips, verifiedAmounts, 'chip-money');
+      } else {
+        essAmount.innerText = 'Not Mentioned';
+        essAmount.className = 'essential-value';
+        moneySection.style.display = 'none';
+      }
+
+      // 4. Dates
       const dateRegex = /\b([0-3]?[0-9][\/\-\.][0-1]?[0-9][\/\-\.](?:20|19)?[0-9]{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+[0-9]{1,2},?\s+[0-9]{4})\b/gi;
       const detectedDates = [...new Set(cleanLines.join(' ').match(dateRegex) || [])];
-      essDate.innerText = detectedDates.length > 0 ? detectedDates[0] : 'None';
+      essDate.innerText = detectedDates.length > 0 ? detectedDates[0] : 'Not Mentioned';
 
-      // 4. Invoices / Reference IDs / GSTIN
+      // 5. Invoices / References
       const idRegex = /(?:inv(?:oice)?|bill|receipt|order|gstin|ref)[\s#.:-]*([a-z0-9\-\/]{4,20})/gi;
       const detectedIds = [];
       let idMatch;
-      const fullText = cleanLines.join(' ');
-      while ((idMatch = idRegex.exec(fullText)) !== null) {
+      while ((idMatch = idRegex.exec(cleanLines.join(' '))) !== null) {
         if (!detectedIds.includes(idMatch[0])) detectedIds.push(idMatch[0]);
       }
-      essRef.innerText = detectedIds.length > 0 ? detectedIds[0] : 'None';
+      essRef.innerText = detectedIds.length > 0 ? detectedIds[0] : 'Not Mentioned';
 
-      // 5. Document Type Heuristic
-      if (/invoice|tax\s*invoice|gst/i.test(fullText)) {
-        docTypeBadge.innerText = "Tax Invoice";
-        docTypeBadge.style.color = "var(--emerald)";
-      } else if (/receipt|cash\s*memo|paid/i.test(fullText)) {
-        docTypeBadge.innerText = "Payment Receipt";
-        docTypeBadge.style.color = "var(--primary)";
-      } else if (/order|bill/i.test(fullText)) {
-        docTypeBadge.innerText = "Commercial Bill";
-        docTypeBadge.style.color = "var(--amber)";
+      // Meta Chips
+      const allMeta = [...detectedDates, ...detectedIds];
+      if (allMeta.length > 0) {
+        metaSection.style.display = 'flex';
+        renderChipGroup(metaChips, allMeta, 'chip-date');
       } else {
-        docTypeBadge.innerText = "General Document";
-        docTypeBadge.style.color = "var(--text-muted)";
+        metaSection.style.display = 'none';
       }
 
-      // Render Visual Chips
-      renderChipGroup(amountsChips, verifiedAmounts, 'chip-money', 'No confirmed currency amounts.');
-      renderChipGroup(metaChips, [...detectedDates, ...detectedIds], 'chip-date', 'No reference codes or dates found.');
-      renderChipGroup(noiseChips, noiseLines, 'chip-noise', 'No barcode artifacts or UI clutter detected.');
-
-      // Render Clean Lines
+      // 6. Text & JSON
       structuredText.innerText = cleanLines.join('\n') || "No legible text found.";
 
-      // Render Structured JSON
       const schema = {
-        executive_summary: {
-          document_category: docTypeBadge.innerText,
-          primary_total_inr: maxTotal,
-          primary_date: detectedDates[0] || null,
-          invoice_reference: detectedIds[0] || null,
-          ocr_engine_confidence: avgConf + '%'
+        document_classification: detectedType || "Unspecified / Not explicitly stated",
+        verified_essentials: {
+          total_amount: verifiedAmounts.length > 0 ? essAmount.innerText : null,
+          dates: detectedDates,
+          identifiers: detectedIds,
+          ocr_confidence: avgConf + '%'
         },
-        financials: {
-          detected_currencies: verifiedAmounts
-        },
-        metadata: {
-          all_dates: detectedDates,
-          identifiers: detectedIds
-        },
-        clean_text_lines: cleanLines
+        legible_lines: cleanLines
       };
       jsonCode.innerText = JSON.stringify(schema, null, 2);
+
+      // Render accurate bounding boxes
+      drawBoxes(ocrWords);
     }
 
-    function renderChipGroup(container, items, chipClass, fallback) {
+    function renderChipGroup(container, items, chipClass) {
       container.innerHTML = '';
-      if (!items || items.length === 0) {
-        container.innerHTML = `<span style="color: #4b5563; font-size: 0.8rem;">${fallback}</span>`;
-        return;
-      }
       items.forEach(text => {
         const chip = document.createElement('span');
         chip.className = `chip ${chipClass}`;
         chip.innerText = text;
-        chip.title = "Click to isolate bounding box on canvas";
+        chip.title = "Click to isolate exact word coordinates on image";
         chip.onclick = () => {
           const token = text.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(' ')[0];
           drawBoxes(ocrWords, token);
@@ -566,23 +552,24 @@
       setTimeout(() => copyBtn.innerText = "Copy JSON", 1500);
     });
 
-    clearBtn.addEventListener('click', () => {
-      docImage.src = '';
-      docImage.style.display = 'none';
+    resetBtn.addEventListener('click', () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      structuredText.innerText = '';
+      currentImgData = null;
+      rawImg = new Image();
+      structuredText.innerText = 'Awaiting document analysis...';
       jsonCode.innerText = '{}';
-      essAmount.innerText = '₹0.00';
-      essDate.innerText = '--';
-      essRef.innerText = '--';
+      essAmount.innerText = 'Not Mentioned';
+      essAmount.className = 'essential-value';
+      essDate.innerText = 'Not Mentioned';
+      essRef.innerText = 'Not Mentioned';
       essConf.innerText = '--%';
-      docTypeBadge.innerText = 'Unknown Type';
-      amountsChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">Waiting for document...</span>';
-      metaChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">Waiting for document...</span>';
-      noiseChips.innerHTML = '<span style="color: #4b5563; font-size: 0.8rem;">No barcodes or mobile UI noise isolated.</span>';
+      docTypeBadge.style.display = 'none';
+      moneySection.style.display = 'none';
+      metaSection.style.display = 'none';
       extractBtn.disabled = true;
+      bwBtn.disabled = true;
       rotateBtn.disabled = true;
-      clearBtn.disabled = true;
+      resetBtn.disabled = true;
       fileSelector.value = '';
       resBadge.innerText = 'No File';
       engineStatus.innerText = 'Ready';
